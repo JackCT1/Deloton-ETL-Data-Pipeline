@@ -1,0 +1,15 @@
+# General
+
+#Misc
+__pycache__
+.DS_Store
+.ipynb_checkpoints
+*.pyc
+
+# Authentication
+.env
+
+#Test files
+sandbox/
+temp.ipynb
+test.ipynb
