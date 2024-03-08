@@ -7,6 +7,17 @@ from dotenv import load_dotenv
 import pandas as pd
 import sqlalchemy
 
+# Credentials
+load_dotenv()
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_NAME = os.getenv('DB_NAME')
+
+STAGING_SCHEMA = 'zuckerberg_staging'
+PRODUCTION_SCHEMA = 'zuckerberg_production'
+
 def get_logger(log_level: str) -> logging.Logger:
     """
     Returns:
@@ -160,3 +171,20 @@ def sql_conversion() -> None:
         index=False
     )
     logging.info('...COMPLETE!') # - check
+
+def handler(event, context):
+    """
+    AWS Handler for Lambda Function
+    """
+
+    # Make logger
+    log = get_logger(logging.INFO)
+
+
+    # Run Script
+    log.info('STARTING...') # - check
+    full_date = datetime.now()
+    log.info('DATE: %s', full_date) # - check
+
+    engine = sqlalchemy.create_engine(f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')    
+    sql_conversion()
