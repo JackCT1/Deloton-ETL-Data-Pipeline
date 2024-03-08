@@ -8,40 +8,40 @@ import pandas as pd
 import sqlalchemy
 
 def get_logger(log_level: str) -> logging.Logger:
-        """
-        Returns:
-        - formatted logger
-        """
-        logging.basicConfig(
-            level=log_level,
-            format='%(asctime)s: %(levelname)s: %(message)s'
-        )
-        logger = logging.getLogger()                    
-        return logger
+    """
+    Returns:
+    - formatted logger
+    """
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s: %(levelname)s: %(message)s'
+    )
+    logger = logging.getLogger()                    
+    return logger
 
 def extract_staging_data() -> dict:
-        """
-        Writes SQL table into dataframe
+    """
+    Writes SQL table into dataframe
 
-        Returns:
-        Dictionary with dataframes:
-        - user dataframe
-        - user_ride dataframe
-        - metrics dataframe
-        """
-        logging.info('EXTRACTING DATA...') # - check
-        
-        user_df = pd.read_sql_query(f'SELECT * FROM {STAGING_SCHEMA}.user_table',con=engine)
-        user_ride_df = pd.read_sql_query(f'SELECT * FROM {STAGING_SCHEMA}.user_ride',con=engine)
-        metrics_df = pd.read_sql_query(f'SELECT * FROM {STAGING_SCHEMA}.metrics_table',con=engine)
+    Returns:
+    Dictionary with dataframes:
+    - user dataframe
+    - user_ride dataframe
+    - metrics dataframe
+    """
+    logging.info('EXTRACTING DATA...') # - check
+    
+    user_df = pd.read_sql_query(f'SELECT * FROM {STAGING_SCHEMA}.user_table',con=engine)
+    user_ride_df = pd.read_sql_query(f'SELECT * FROM {STAGING_SCHEMA}.user_ride',con=engine)
+    metrics_df = pd.read_sql_query(f'SELECT * FROM {STAGING_SCHEMA}.metrics_table',con=engine)
 
-        dfs_dict = {
-            "user_df": user_df,
-            "user_ride_df": user_ride_df,
-            "metrics_df": metrics_df
-        }
+    dfs_dict = {
+        "user_df": user_df,
+        "user_ride_df": user_ride_df,
+        "metrics_df": metrics_df
+    }
 
-        return dfs_dict
+    return dfs_dict
 
 def calculate_age(date_of_birth: str) -> int:
     """
@@ -143,3 +143,20 @@ def clean_dataframes(df_dict: dict) -> pd:
     log.info('CREATED RIDE DATAFRAME') # - check
 
     return ride_df
+
+def sql_conversion() -> None:
+    """
+    Write dataframe into SQL table
+    """
+
+    logging.info('SCHEMA: %s', PRODUCTION_SCHEMA) # - check
+    df_dict = extract_staging_data()
+    clean_df = clean_dataframes(df_dict)
+    clean_df.to_sql(
+        'dash_table',
+        con=engine,
+        schema=PRODUCTION_SCHEMA,
+        if_exists='replace',
+        index=False
+    )
+    logging.info('...COMPLETE!') # - check
