@@ -83,3 +83,63 @@ def calculate_bmi(weight_kg: int, height_cm: int) -> float:
         bmi = round(weight/(height)**2, 1)
     
     return bmi
+
+def clean_dataframes(df_dict: dict) -> pd:
+    """
+    Combines & Transforms staging dataframes
+
+    Returns:
+    - Single transformed dataframe
+    """
+
+    user_df = df_dict.get("user_df")
+    user_ride = df_dict.get("user_ride_df")
+    metrics_df = df_dict.get("metrics_df")
+
+    # extract relevant information from user_df
+    updated_user = pd.DataFrame()
+    updated_user['user_id'] = user_df['user_id']
+    updated_user['first_name'] = user_df['first_name']
+    updated_user['last_name'] = user_df['last_name']
+    updated_user['gender'] = user_df['gender']
+    updated_user['age'] = user_df['date_of_birth'].apply(calculate_age)
+    updated_user['bmi'] = user_df.apply(lambda row: calculate_bmi(row.weight_kg, row.height_cm), axis=1)
+    updated_user['postcode'] = user_df['postcode']
+    updated_user['account_creation'] = user_df['account_creation']
+
+    # merge updated_user + user_ride
+    user_merge_df = user_ride.merge(updated_user, on='user_id', how='left', sort=False)
+    
+    # extract relevant information from metrics_df
+    grouped_metrics = metrics_df.groupby('ride_id').agg({
+        'time':'first',
+        'bike_model':'first',
+        'resistance':'mean',
+        'heart_rate':['mean','min','max'],
+        'rpm':['mean','min','max'],
+        'power':['sum','mean','min','max'],
+        'duration_seconds':'max'
+    }).reset_index()
+
+    updated_metrics = pd.DataFrame()
+    updated_metrics['ride_id'] = grouped_metrics['ride_id']
+    updated_metrics['time'] = grouped_metrics['time']['first']
+    updated_metrics['bike_model'] = grouped_metrics['bike_model']['first']
+    updated_metrics['resistance_avg'] = grouped_metrics['resistance']['mean']
+    updated_metrics['heart_rate_avg'] = grouped_metrics['heart_rate']['mean']
+    updated_metrics['heart_rate_min'] = grouped_metrics['heart_rate']['min']
+    updated_metrics['heart_rate_max'] = grouped_metrics['heart_rate']['max']
+    updated_metrics['rpm_avg'] = grouped_metrics['rpm']['mean']
+    updated_metrics['rpm_min'] = grouped_metrics['rpm']['min']
+    updated_metrics['rpm_max'] = grouped_metrics['rpm']['max']
+    updated_metrics['power_total'] = grouped_metrics['power']['sum']
+    updated_metrics['power_avg'] = grouped_metrics['power']['mean']
+    updated_metrics['power_min'] = grouped_metrics['power']['min']
+    updated_metrics['power_max'] = grouped_metrics['power']['max']
+    updated_metrics['duration_seconds'] = grouped_metrics['duration_seconds']['max']
+    
+    # merge user_df + updated_metrics
+    ride_df = user_merge_df.merge(updated_metrics, on='ride_id', how='left', sort=False)
+    log.info('CREATED RIDE DATAFRAME') # - check
+
+    return ride_df
