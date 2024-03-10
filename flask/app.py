@@ -22,3 +22,10 @@ DB_PASSWORD = urllib.parse.quote_plus(os.getenv('DB_PASSWORD'))
 DB_NAME = os.getenv('DB_NAME')
 
 PRODUCTION_SCHEMA = 'zuckerberg_production'
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+CORS(app, origins=["http://127.0.0.1:8080", "localhost"], supports_credentials=True)
